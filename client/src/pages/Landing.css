@@ -1,0 +1,61 @@
+.landing-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.landing-card {
+  background: #f9fefe;
+  padding: 40px;
+  width: 380px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+  animation: fadeUp 0.8s ease;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.landing-card img {
+  width: 90px;
+  margin-bottom: 15px;
+}
+
+.landing-card h1 {
+  margin-bottom: 8px;
+}
+
+.landing-card p {
+  margin-bottom: 25px;
+  color: #555;
+}
+
+.landing-buttons {
+  display: flex;
+  gap: 15px;
+}
+
+.landing-buttons button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: #1f8f8a;
+  color: white;
+  font-size: 16px;
+}
+
+.signup-btn {
+  background: #0f6b66;
+}
