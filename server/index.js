@@ -13,30 +13,19 @@ connectDB();
 const app = express();
 
 /* =======================
-   ✅ CORS — MUST BE FIRST
+   ✅ GLOBAL CORS (FIXED)
    ======================= */
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://unrivaled-sable-7dae14.netlify.app"
+  "https://unrivaled-sable-7dae14.netlify.app",
 ];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("CORS not allowed"));
-      }
-    },
+    origin: allowedOrigins,
     credentials: true,
-    methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
-// ✅ VERY IMPORTANT: handle preflight explicitly
-app.options("*", cors());
 
 app.use(express.json());
 
