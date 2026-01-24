@@ -12,90 +12,99 @@ connectDB();
 
 const app = express();
 
-app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "https://unrivaled-sable-7dae14.netlify.app/"
-  ],
-  credentials: true
-}));
+/* =======================
+   ✅ CORS — MUST BE FIRST
+   ======================= */
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://unrivaled-sable-7dae14.netlify.app"
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS not allowed"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// ✅ VERY IMPORTANT: handle preflight explicitly
+app.options("*", cors());
 
 app.use(express.json());
 
+/* ROUTES */
 app.use("/api/auth", require("./routes/authRoutes"));
 
 app.get("/", (req, res) => {
-  res.send("ChatPanda API Running 🚀");
+  res.send("ChatPanda API running 🐼");
 });
 
+/* =======================
+   SOCKET.IO
+   ======================= */
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: [
-      "http://localhost:3000",
-      "https://unrivaled-sable-7dae14.netlify.app/"
-    ],
-    methods: ["GET", "POST"]
-  }
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
 });
 
-// 🔐 SOCKET AUTH
+/* SOCKET AUTH */
 io.use((socket, next) => {
-  try {
-    const token = socket.handshake.auth.token;
-    if (!token) return next(new Error("No token"));
+  const token = socket.handshake.auth.token;
+  if (!token) return next(new Error("Authentication error"));
 
+  try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    socket.user = decoded;   // store full user
+    socket.user = decoded; // { id, username }
     next();
-  } catch (err) {
-    next(new Error("Auth failed"));
+  } catch {
+    next(new Error("Authentication error"));
   }
 });
 
-const onlineUsers = new Map();
+const onlineUsers = {};
 
 io.on("connection", async (socket) => {
-  const username = socket.user.username;
-  console.log("Connected:", username);
+  console.log("Connected:", socket.user.username);
 
-  onlineUsers.set(socket.id, username);
-  io.emit("onlineUsers", [...new Set(onlineUsers.values())]);
+  onlineUsers[socket.id] = socket.user.username;
+  io.emit("onlineUsers", Object.values(onlineUsers));
 
-  // Send previous messages
-  const messages = await Message.find().sort({ createdAt: 1 }).limit(200);
+  const messages = await Message.find().sort({ createdAt: 1 });
   socket.emit("previousMessages", messages);
 
   socket.on("sendMessage", async ({ text }) => {
     if (!text || !text.trim()) return;
 
     const newMessage = new Message({
-      user: username,
-      text
+      user: socket.user.username,
+      text,
     });
 
     await newMessage.save();
     io.emit("receiveMessage", newMessage);
   });
 
-  socket.on("typing", () => {
-    socket.broadcast.emit("userTyping", username);
-  });
-
-  socket.on("stopTyping", () => {
-    socket.broadcast.emit("stopTyping");
-  });
-
   socket.on("disconnect", () => {
-    console.log("Disconnected:", username);
-    onlineUsers.delete(socket.id);
-    io.emit("onlineUsers", [...new Set(onlineUsers.values())]);
+    delete onlineUsers[socket.id];
+    io.emit("onlineUsers", Object.values(onlineUsers));
+    console.log("Disconnected:", socket.user.username);
   });
 });
 
 const PORT = process.env.PORT || 5000;
-
 server.listen(PORT, () => {
   console.log("Server started on port", PORT);
 });
