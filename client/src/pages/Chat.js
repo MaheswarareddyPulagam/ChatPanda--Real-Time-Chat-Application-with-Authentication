@@ -24,7 +24,7 @@ function Chat() {
       return;
     }
 
-    socketRef.current = io("http://localhost:5000", {
+    socketRef.current = io("https://chatpanda-server.onrender.com/", {
       auth: { token },
     });
 

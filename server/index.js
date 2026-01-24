@@ -11,61 +11,68 @@ dotenv.config();
 connectDB();
 
 const app = express();
-app.use(cors());
+
+app.use(cors({
+  origin: [
+    "http://localhost:3000",
+    "https://unrivaled-sable-7dae14.netlify.app/"
+  ],
+  credentials: true
+}));
+
 app.use(express.json());
 
 app.use("/api/auth", require("./routes/authRoutes"));
 
 app.get("/", (req, res) => {
-  res.send("API running");
+  res.send("ChatPanda API Running 🚀");
 });
 
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
-    methods: ["GET", "POST"],
-  },
-});
-
-/* 🔐 SOCKET AUTH */
-io.use((socket, next) => {
-  const token = socket.handshake.auth?.token;
-  if (!token) return next(new Error("Auth error"));
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    socket.user = {
-      id: decoded.id,
-      username: decoded.username, // ✅ MUST EXIST
-    };
-
-    next();
-  } catch {
-    next(new Error("Auth error"));
+    origin: [
+      "http://localhost:3000",
+      "https://unrivaled-sable-7dae14.netlify.app/"
+    ],
+    methods: ["GET", "POST"]
   }
 });
 
-/* 🟢 ONLINE USERS */
-const onlineUsers = new Set();
+// 🔐 SOCKET AUTH
+io.use((socket, next) => {
+  try {
+    const token = socket.handshake.auth.token;
+    if (!token) return next(new Error("No token"));
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.user = decoded;   // store full user
+    next();
+  } catch (err) {
+    next(new Error("Auth failed"));
+  }
+});
+
+const onlineUsers = new Map();
 
 io.on("connection", async (socket) => {
-  console.log("Connected:", socket.user.username);
+  const username = socket.user.username;
+  console.log("Connected:", username);
 
-  onlineUsers.add(socket.user.username);
-  io.emit("onlineUsers", Array.from(onlineUsers));
+  onlineUsers.set(socket.id, username);
+  io.emit("onlineUsers", [...new Set(onlineUsers.values())]);
 
-  const messages = await Message.find().sort({ createdAt: 1 });
+  // Send previous messages
+  const messages = await Message.find().sort({ createdAt: 1 }).limit(200);
   socket.emit("previousMessages", messages);
 
   socket.on("sendMessage", async ({ text }) => {
     if (!text || !text.trim()) return;
 
     const newMessage = new Message({
-      user: socket.user.username,
-      text,
+      user: username,
+      text
     });
 
     await newMessage.save();
@@ -73,7 +80,7 @@ io.on("connection", async (socket) => {
   });
 
   socket.on("typing", () => {
-    socket.broadcast.emit("userTyping", socket.user.username);
+    socket.broadcast.emit("userTyping", username);
   });
 
   socket.on("stopTyping", () => {
@@ -81,12 +88,14 @@ io.on("connection", async (socket) => {
   });
 
   socket.on("disconnect", () => {
-    onlineUsers.delete(socket.user.username);
-    io.emit("onlineUsers", Array.from(onlineUsers));
-    console.log("Disconnected:", socket.user.username);
+    console.log("Disconnected:", username);
+    onlineUsers.delete(socket.id);
+    io.emit("onlineUsers", [...new Set(onlineUsers.values())]);
   });
 });
 
-server.listen(5000, () => {
-  console.log("Server started on port 5000");
+const PORT = process.env.PORT || 5000;
+
+server.listen(PORT, () => {
+  console.log("Server started on port", PORT);
 });
