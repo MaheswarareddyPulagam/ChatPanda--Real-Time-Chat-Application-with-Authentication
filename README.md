@@ -21,5 +21,6 @@ A full-stack real-time chat application with authentication and WebSocket-based 
 - Responsive UI
 
 ## Folder Structure
--Server :Server holds all the backend implementation using node.js and authentication usage of jwt tokens and database integration using MongoDB
--Client :Client hold all the frontend implementaion using react and css and html.
+-Server :Server holds all the backend implementation using Node.js and authentication usage of JWT tokens and database integration using MongoDB.
+
+-Client :Client hold all the frontend implementaion using React.js and CSS and HTML.
