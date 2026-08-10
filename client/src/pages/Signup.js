@@ -24,10 +24,13 @@ function Signup() {
     }
 
     try {
-      await axios.post("https://chatpanda-server.onrender.com/api/auth/signup", {
-        username,
-        password,
-      });
+      await axios.post(
+  "http://13.232.126.113:5000/api/auth/signup",
+  {
+    username,
+    password,
+  }
+);
       navigate("/login");
     } catch {
       setError("Username already exists");

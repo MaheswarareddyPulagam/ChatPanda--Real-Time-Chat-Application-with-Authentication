@@ -23,10 +23,9 @@ function Chat() {
       navigate("/");
       return;
     }
-
-    socketRef.current = io("https://chatpanda-server.onrender.com/", {
-      auth: { token },
-    });
+    socketRef.current = io("http://13.232.126.113:5000", {
+  auth: { token },
+});
 
     const socket = socketRef.current;
 

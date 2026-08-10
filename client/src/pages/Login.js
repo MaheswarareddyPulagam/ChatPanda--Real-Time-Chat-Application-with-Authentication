@@ -12,9 +12,9 @@ function Login() {
   const handleLogin = async () => {
     try {
       const res = await axios.post(
-        "https://chatpanda-server.onrender.com/api/auth/login",
-        { username, password }
-      );
+  "http://13.232.126.113:5000/api/auth/login",
+  { username, password }
+);
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("username", res.data.username); // ✅ IMPORTANT
