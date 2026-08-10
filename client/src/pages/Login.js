@@ -12,7 +12,7 @@ function Login() {
   const handleLogin = async () => {
     try {
       const res = await axios.post(
-  "http://13.232.126.113:5000/api/auth/login",
+  "https://15-252-129-3.sslip.io/api/auth/login",
   { username, password }
 );
 

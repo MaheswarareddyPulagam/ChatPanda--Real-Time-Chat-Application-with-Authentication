@@ -23,7 +23,7 @@ function Chat() {
       navigate("/");
       return;
     }
-    socketRef.current = io("http://13.232.126.113:5000", {
+    socketRef.current = io("https://15-252-129-3.sslip.io", {
   auth: { token },
 });
 
